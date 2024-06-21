@@ -1,7 +1,6 @@
 pipeline {
     agent any
     environment {
-        DOCKER_CREDENTIALS_ID = 'dockerhub-credentials' // Jenkins credentials ID for Docker Hub
         DOCKER_IMAGE = 'drulacosmin/springboot-helloworld:latest'
     }
     stages {
@@ -12,19 +11,10 @@ pipeline {
                 }
             }
         }
-        stage('Docker Build and Push') {
-            steps {
-                script {
-                    docker.withRegistry('https://index.docker.io/v1/', DOCKER_CREDENTIALS_ID) {
-                        def app = docker.build(DOCKER_IMAGE)
-                        app.push()
-                    }
-                }
-            }
-        }
         stage('Update Kubernetes Manifests') {
             steps {
                 script {
+                    // Assuming the Kubernetes manifests are in the `k8s` directory of the repository
                     sh '''
                     git clone https://github.com/drulacosmin/jenkins-argo-pipe.git
                     cd jenkins-argo-pipe/k8s
@@ -40,10 +30,10 @@ pipeline {
     }
     post {
         success {
-            echo 'Build and push completed successfully. Kubernetes manifests updated.'
+            echo 'Build completed successfully. Kubernetes manifests updated.'
         }
         failure {
-            echo 'Build or push failed.'
+            echo 'Build or manifest update failed.'
         }
     }
 }
